@@ -1,0 +1,1279 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0814">
+<title>Искра</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: auth card on a glowing dark field; app = chat list + conversation (single column on phones).
+   One dark look: ink-violet ground, violet / magenta / cyan accents. */
+:root {
+  --bg: #0a0814;
+  --surface: #131029;
+  --surface-2: #1b1738;
+  --line: #2b2552;
+  --fg: #f3f0ff;
+  --muted: #9089c0;
+  --violet: #8b5cff;
+  --pink: #ff3da5;
+  --cyan: #2de2e6;
+  --danger: #ff6b8a;
+  --display: "Unbounded", "Onest", system-ui, sans-serif;
+  --body: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --grad: linear-gradient(135deg, var(--violet), var(--pink));
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { height: 100%; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  height: 100%;
+  margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.45 var(--body);
+  overflow-x: hidden;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* ---------- Auth ---------- */
+.auth { height: 100%; display: grid; place-items: center; }
+.auth::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(520px 360px at 15% 10%, rgba(139, 92, 255, 0.32), transparent 70%),
+    radial-gradient(480px 340px at 90% 85%, rgba(255, 61, 165, 0.24), transparent 70%),
+    radial-gradient(360px 260px at 80% 8%, rgba(45, 226, 230, 0.14), transparent 70%);
+}
+.auth-card {
+  width: min(100%, 400px);
+  background: rgba(19, 16, 41, 0.86);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 28px 24px;
+  backdrop-filter: blur(10px);
+}
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
+.brand svg { width: 34px; height: 34px; }
+.brand span { font: 700 22px var(--display); letter-spacing: 0.02em; }
+h1 { font: 700 21px/1.25 var(--display); margin: 0 0 8px; text-wrap: balance; }
+.sub { margin: 0 0 22px; color: var(--muted); }
+.phone-row { display: flex; gap: 8px; }
+.field {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 14px;
+  width: 100%;
+  min-width: 0;
+}
+.field:focus { border-color: var(--violet); outline: none; box-shadow: 0 0 0 3px rgba(139, 92, 255, 0.28); }
+select.field { width: auto; flex: none; padding-right: 8px; }
+.phone-row input { flex: 1; letter-spacing: 0.04em; }
+.btn {
+  margin-top: 16px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 14px;
+  font-weight: 600;
+  background: var(--grad);
+  color: #fff;
+  transition: transform 0.12s, filter 0.12s;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { filter: grayscale(0.8) brightness(0.7); cursor: default; }
+.link { background: none; border: 0; padding: 0; color: var(--cyan); font-weight: 500; }
+.link:disabled { color: var(--muted); cursor: default; }
+.err { color: var(--danger); margin: 10px 0 0; min-height: 1.4em; }
+.otp { display: flex; gap: 8px; justify-content: space-between; }
+.otp input {
+  width: 100%;
+  max-width: 52px;
+  min-width: 0;
+  aspect-ratio: 1 / 1.15;
+  text-align: center;
+  font: 700 22px var(--display);
+  padding: 0;
+}
+.otp.shake { animation: shake 0.35s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+
+.sms {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  transform: translate(-50%, -140%);
+  width: min(calc(100% - 32px), 420px);
+  background: #fff;
+  color: #14102a;
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+  text-align: left;
+  border: 0;
+  display: block;
+}
+.sms.show { transform: translate(-50%, 0); }
+.sms b { display: block; font-size: 12px; color: #6b5fb0; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 2px; }
+.sms small { display: block; margin-top: 4px; color: #6b5fb0; }
+
+/* ---------- App ---------- */
+.app {
+  height: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  background: var(--surface);
+  border-inline: 1px solid var(--line);
+}
+.side { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); min-width: 0; }
+.me { display: flex; align-items: center; gap: 12px; padding: 14px; }
+.me .who { flex: 1; min-width: 0; }
+.me .who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me .who span { color: var(--muted); font-size: 13px; }
+.icon-btn {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  flex: none;
+}
+.icon-btn:hover { border-color: var(--violet); }
+.icon-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.search { padding: 0 14px 10px; }
+.new-form { padding: 0 14px 12px; display: grid; gap: 8px; }
+.new-form .btn { margin-top: 0; padding: 11px; }
+.new-form .hint { margin: 0; color: var(--muted); font-size: 13px; }
+.list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; min-height: 0; }
+.item {
+  display: flex; gap: 12px; align-items: center;
+  width: 100%;
+  padding: 10px 14px;
+  background: none; border: 0; text-align: left;
+  border-left: 3px solid transparent;
+}
+.item:hover { background: var(--surface-2); }
+.item.active { background: var(--surface-2); border-left-color: var(--pink); }
+.item .mid { flex: 1; min-width: 0; }
+.item .mid b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .mid span { display: block; color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .end { display: grid; justify-items: end; gap: 6px; font-size: 12px; color: var(--muted); }
+.badge {
+  min-width: 22px; height: 22px; padding: 0 7px;
+  border-radius: 11px;
+  background: var(--grad);
+  color: #fff; font-weight: 600; font-size: 12px;
+  display: grid; place-items: center;
+}
+.av {
+  width: 46px; height: 46px; flex: none;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font: 700 16px var(--display);
+  color: #fff;
+}
+.av.sm { width: 40px; height: 40px; font-size: 14px; }
+.empty-list { padding: 18px 14px; color: var(--muted); font-size: 14px; }
+
+.chat { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--bg); }
+.chat-empty { margin: auto; text-align: center; color: var(--muted); padding: 24px; }
+.chat-empty svg { width: 54px; height: 54px; margin-bottom: 12px; }
+.chat-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.chat-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.chat-head .t { flex: 1; min-width: 0; }
+.chat-head .t b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-head .t span { font-size: 13px; color: var(--muted); }
+.chat-head .t span.typing { color: var(--cyan); }
+.back { display: none; }
+.msgs {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 16px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+  background:
+    radial-gradient(420px 300px at 100% 0%, rgba(139, 92, 255, 0.1), transparent 70%),
+    radial-gradient(380px 280px at 0% 100%, rgba(255, 61, 165, 0.08), transparent 70%),
+    var(--bg);
+}
+.day { align-self: center; font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px 10px; margin: 4px 0 8px; }
+.bub {
+  max-width: min(78%, 520px);
+  padding: 8px 12px 6px;
+  border-radius: 16px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.bub.in { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.bub.out { align-self: flex-end; background: var(--grad); color: #fff; border-bottom-right-radius: 5px; }
+.bub .meta { display: block; text-align: right; font-size: 11px; opacity: 0.7; margin-top: 2px; white-space: normal; }
+.bub.out .meta .read { color: #bff9fb; opacity: 1; }
+.send-err { margin: 0; padding: 6px 14px 0; background: var(--surface); }
+.send-err:empty { display: none; }
+.composer { display: flex; gap: 10px; padding: 12px 14px; background: var(--surface); border-top: 1px solid var(--line); }
+.composer .field { border-radius: 22px; }
+.send {
+  width: 46px; height: 46px; flex: none;
+  border: 0; border-radius: 50%;
+  background: var(--grad);
+  display: grid; place-items: center;
+  color: #fff;
+}
+.send svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.send:disabled { filter: grayscale(0.9) brightness(0.6); cursor: default; }
+
+/* ---------- Admin ---------- */
+.admin { position: fixed; inset: 0; z-index: 40; overflow-y: auto; background: rgba(10, 8, 20, 0.94); padding: calc(env(safe-area-inset-top, 0px) + 16px) 12px calc(env(safe-area-inset-bottom, 0px) + 16px); }
+.admin-in { max-width: 760px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
+.admin-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.admin-head h2 { flex: 1; margin: 0; font: 700 18px var(--display); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 8px; }
+.stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.stat b { display: block; font: 700 24px var(--display); }
+.stat span { color: var(--muted); font-size: 13px; }
+.adm-info { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+.adm-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.adm-row .btn { margin-top: 0; width: auto; flex: none; padding: 0 16px; }
+.adm-msg { margin: 0 0 10px; min-height: 1.4em; color: var(--cyan); }
+.adm-msg.bad { color: var(--danger); }
+.adm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.adm-user { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: var(--surface-2); }
+.adm-user.banned { border-color: var(--danger); }
+.adm-top { display: flex; align-items: center; gap: 12px; }
+.adm-top .mid { flex: 1; min-width: 0; }
+.adm-top .mid b { display: block; overflow-wrap: anywhere; }
+.adm-top .mid span { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+.dot.on { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+.adm-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.adm-acts button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 12px; font-size: 13.5px; }
+.adm-acts button:hover { border-color: var(--violet); }
+.adm-acts .danger { color: var(--danger); }
+.adm-acts .danger:hover { border-color: var(--danger); }
+.av { overflow: hidden; }
+.av-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prof-av-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+.prof-av-row .av.lg { margin: 0; }
+.prof-av-btns { display: grid; gap: 6px; justify-items: start; }
+.sec { margin: 22px 0 8px; font: 700 15px var(--display); }
+.acc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.acc { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.acc.cur { border-color: var(--violet); }
+.acc button.pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; text-align: left; }
+.acc .mid { min-width: 0; flex: 1; }
+.acc .mid b, .acc .mid span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc .mid span { color: var(--muted); font-size: 13px; }
+.acc .tag { font-size: 12px; color: var(--cyan); }
+.btn.ghost { background: var(--surface-2); border: 1px solid var(--line); margin-top: 10px; }
+.block-bar { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 14px; background: var(--surface); border-top: 1px solid var(--line); color: var(--muted); }
+.me-id { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; background: none; border: 0; padding: 0; text-align: left; }
+.av.lg { width: 72px; height: 72px; font-size: 26px; margin: 0 auto 6px; }
+.lbl { display: block; margin: 14px 0 6px; color: var(--muted); font-size: 13px; }
+.at-wrap { position: relative; }
+.at-wrap > span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.at-wrap .field { padding-left: 30px; }
+.prof-hint { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.note { margin: 0 0 14px; color: var(--cyan); font-size: 13.5px; }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); border-inline: 0; }
+  .chat { display: none; }
+  .app.open .side { display: none; }
+  .app.open .chat { display: flex; }
+  .back { display: grid; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; animation: none; }
+}
+</style>
+</head>
+<body>
+
+
+<!-- ================= AUTH ================= -->
+<main class="auth" id="auth">
+  <div class="auth-card">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cff"/><stop offset="1" stop-color="#ff3da5"/></linearGradient></defs>
+        <rect width="40" height="40" rx="12" fill="url(#g)"/>
+        <path d="M22.5 7 11 22h8l-2 11 12-16h-8z" fill="#fff"/>
+      </svg>
+      <span>Искра</span>
+    </div>
+
+    <section id="stPhone">
+      <h1>Войдите по номеру телефона</h1>
+      <p class="sub">Введите номер, чтобы войти или создать аккаунт.</p>
+      <form id="phoneForm" novalidate>
+        <div class="phone-row">
+          <select id="cc" class="field" aria-label="Код страны">
+            <option value="380">UA +380</option>
+            <option value="48">PL +48</option>
+            <option value="49">DE +49</option>
+            <option value="44">GB +44</option>
+            <option value="1">US +1</option>
+            <option value="90">TR +90</option>
+            <option value="7">KZ +7</option>
+          </select>
+          <input id="phone" class="field" inputmode="tel" autocomplete="tel-national" placeholder="67 123 45 67" aria-label="Номер телефона">
+        </div>
+        <p class="err" id="phoneErr" role="alert"></p>
+        <button class="btn" id="phoneBtn" type="submit">Продолжить</button>
+      </form>
+    </section>
+
+    
+      <section id="stPass" hidden>
+      <h1>Введите пароль</h1>
+      <p class="sub">Вход для <b id="passPhone"></b></p>
+      <form id="passForm" novalidate>
+        <input id="loginPass" class="field" type="password" autocomplete="current-password" placeholder="Пароль" maxlength="128" aria-label="Пароль">
+        <p class="err" id="passErr" role="alert"></p>
+        <button class="btn" id="passBtn" type="submit">Войти</button>
+      </form>
+      <div class="row-between" style="margin-top:12px">
+        <button class="link" type="button" id="changePhone">Изменить номер</button>
+      </div>
+    </section>
+
+    <section id="stNew" hidden>
+      <h1>Создайте аккаунт</h1>
+      <p class="sub">Номер <b id="newPhone"></b> ещё не зарегистрирован. Придумайте имя и пароль.</p>
+      <form id="nameForm" novalidate>
+        <input id="firstName" class="field" autocomplete="given-name" placeholder="Имя" maxlength="30" aria-label="Имя">
+        <input id="lastName" class="field" autocomplete="family-name" placeholder="Фамилия (необязательно)" maxlength="30" aria-label="Фамилия" style="margin-top:10px">
+        <input id="newPass" class="field" type="password" autocomplete="new-password" placeholder="Пароль (не короче 8 символов)" maxlength="128" aria-label="Пароль" style="margin-top:10px">
+        <input id="newPass2" class="field" type="password" autocomplete="new-password" placeholder="Повторите пароль" maxlength="128" aria-label="Повторите пароль" style="margin-top:10px">
+        <p class="err" id="nameErr" role="alert"></p>
+        <button class="btn" id="nameBtn" type="submit">Создать аккаунт</button>
+      </form>
+      <div class="row-between" style="margin-top:12px">
+        <button class="link" type="button" id="changePhone2">Изменить номер</button>
+      </div>
+    </section>
+    <div class="row-between"><button class="link" type="button" id="authCancel" hidden>Отмена</button></div>
+  </div>
+</main>
+
+<!-- ================= APP ================= -->
+<div class="app" id="app" hidden>
+  <aside class="side">
+    <header class="me">
+      <button class="me-id" id="profBtn" type="button" aria-label="Мой профиль" title="Мой профиль">
+        <div class="av sm" id="meAv"></div>
+        <div class="who"><b id="meName"></b><span id="mePhone"></span></div>
+      </button>
+      <button class="icon-btn" id="newBtn" type="button" aria-label="Новый чат" title="Новый чат">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="icon-btn" id="admBtn" type="button" aria-label="Админ-панель" title="Админ-панель" hidden>
+        <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>
+      </button>
+      <button class="icon-btn" id="logoutBtn" type="button" aria-label="Выйти" title="Выйти">
+        <svg viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg>
+      </button>
+    </header>
+    <form class="new-form" id="newForm" hidden novalidate>
+      <input id="nPhone" class="field" inputmode="tel" placeholder="@имя" aria-label="Имя пользователя собеседника">
+      <p class="hint">Введите @имя собеседника. Он должен быть зарегистрирован в Искре.</p>
+      <p class="err" id="nErr" style="margin:0"></p>
+      <button class="btn" id="nBtn" type="submit">Найти и добавить</button>
+    </form>
+    <div class="search"><input id="q" class="field" type="search" placeholder="Поиск по чатам" aria-label="Поиск по чатам"></div>
+    <ul class="list" id="list"></ul>
+  </aside>
+
+  <section class="chat" id="chat">
+    <div class="chat-empty" id="chatEmpty">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="url(#g)"/><path d="M22.5 7 11 22h8l-2 11 12-16h-8z" fill="#fff"/></svg>
+      <div>Выберите чат или добавьте собеседника по номеру телефона</div>
+    </div>
+    <div class="chat-body" id="chatBody" hidden>
+      <header class="chat-head">
+        <button class="icon-btn back" id="backBtn" type="button" aria-label="К списку чатов">
+          <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <div class="av sm" id="chAv"></div>
+        <div class="t"><b id="chName"></b><span id="chStatus"></span></div>
+        <button class="icon-btn" id="blockBtn" type="button" aria-label="Заблокировать" title="Заблокировать: человек не сможет вам писать">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+        </button>
+      </header>
+      <div class="msgs" id="msgs"></div>
+      <p class="err send-err" id="sendErr" role="alert"></p>
+      <div class="block-bar" id="blockBar" hidden>
+        <span>Вы заблокировали этого пользователя.</span>
+        <button class="link" id="unblockBtn" type="button">Разблокировать</button>
+      </div>
+      <form class="composer" id="composer" autocomplete="off">
+        <input id="text" class="field" placeholder="Сообщение" maxlength="2000" aria-label="Сообщение">
+        <button class="send" id="sendBtn" type="submit" aria-label="Отправить" disabled>
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+    </div>
+  </section>
+</div>
+
+<!-- ================= PROFILE ================= -->
+<div class="admin" id="profile" role="dialog" aria-label="Профиль" hidden>
+  <div class="admin-in" style="max-width:440px">
+    <header class="admin-head">
+      <h2>Профиль</h2>
+      <button class="icon-btn" id="pClose" type="button" aria-label="Закрыть" title="Закрыть">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="prof-av-row">
+      <div class="av lg" id="pAv"></div>
+      <div class="prof-av-btns">
+        <button class="link" id="pPick" type="button">Выбрать фото</button>
+        <button class="link" id="pDrop" type="button">Убрать фото</button>
+      </div>
+      <input type="file" id="pFile" accept="image/*" hidden>
+    </div>
+    <form id="profForm" novalidate autocomplete="off">
+      <label class="lbl" for="pName">Имя</label>
+      <input id="pName" class="field" maxlength="60">
+      <label class="lbl" for="pUser">Имя пользователя</label>
+      <div class="at-wrap"><span>@</span><input id="pUser" class="field" maxlength="24" autocapitalize="none" spellcheck="false" placeholder="например, ivan_k"></div>
+      <p class="prof-hint">По нему вас можно найти без номера. 3–24 символа: латинские буквы, цифры и _. Оставьте пустым, чтобы убрать.</p>
+      <label class="lbl">Телефон</label>
+      <div id="pPhone"></div>
+      <p class="adm-msg" id="pMsg" role="status" style="margin-top:12px"></p>
+      <button class="btn" id="pBtn" type="submit" style="margin-top:0">Сохранить</button>
+    </form>
+    <h3 class="sec" id="accTitle"></h3>
+    <ul class="acc-list" id="accList"></ul>
+    <button class="btn ghost" id="accAdd" type="button">Добавить аккаунт</button>
+  </div>
+</div>
+
+<!-- ================= ADMIN ================= -->
+<div class="admin" id="admin" role="dialog" aria-label="Админ-панель" hidden>
+  <div class="admin-in">
+    <header class="admin-head">
+      <h2>Админ-панель</h2>
+      <button class="icon-btn" id="admRefresh" type="button" aria-label="Обновить" title="Обновить">
+        <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+      </button>
+      <button class="icon-btn" id="admClose" type="button" aria-label="Закрыть" title="Закрыть">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="stats" id="admStats"></div>
+    <p class="adm-info" id="admInfo"></p>
+    <form class="adm-row" id="admBc" autocomplete="off">
+      <input id="admText" class="field" placeholder="Сообщение всем пользователям" maxlength="2000" aria-label="Сообщение всем пользователям">
+      <button class="btn" type="submit">Отправить всем</button>
+    </form>
+    <input id="admQ" class="field" type="search" placeholder="Поиск по имени или номеру" aria-label="Поиск пользователей" style="margin-bottom:10px">
+    <p class="adm-msg" id="admMsg" role="status"></p>
+    <ul class="adm-list" id="admList"></ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+
+  /* ---------- state ---------- */
+  var MAX_ACCOUNTS = 4;
+  var TOKEN = null, accounts = [];
+  try {
+    accounts = JSON.parse(localStorage.getItem("iskra-accounts") || "[]");
+    var legacy = localStorage.getItem("iskra-token");
+    if (!Array.isArray(accounts)) accounts = [];
+    if (legacy && !accounts.some(function (a) { return a.token === legacy; })) accounts.push({ token: legacy, id: "", name: "", phone: "" });
+    localStorage.removeItem("iskra-token");
+    TOKEN = localStorage.getItem("iskra-active");
+  } catch (e) {}
+  accounts = accounts.slice(0, MAX_ACCOUNTS);
+  if (!accounts.some(function (a) { return a.token === TOKEN; })) TOKEN = accounts.length ? accounts[0].token : null;
+  function saveAccounts() {
+    try {
+      localStorage.setItem("iskra-accounts", JSON.stringify(accounts));
+      localStorage.setItem("iskra-active", TOKEN || "");
+    } catch (e) {}
+  }
+  var addingAccount = false, blocked = [];
+  var me = null, users = {}, msgs = [], seen = {}, seq = 0;
+  var contacts = [], myReads = {}, peerReads = {}, typingMap = {};
+  var activeId = null, renderSig = "";
+  var pendingPhone = "";
+  var pollTimer = null, polling = false;
+  var lastTypingSent = 0;
+
+  /* ---------- api ---------- */
+  function api(method, path, body) {
+    var opts = { method: method, headers: {} };
+    if (TOKEN) opts.headers.Authorization = "Bearer " + TOKEN;
+    if (body) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    return fetch(path, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) {
+          var err = new Error(j.error || "Ошибка " + r.status);
+          err.status = r.status; err.data = j;
+          throw err;
+        }
+        return j;
+      });
+    });
+  }
+  function errText(e) {
+    return e && e.status ? e.message : "Нет связи с сервером. Проверьте, что он запущен.";
+  }
+
+  /* ---------- helpers ---------- */
+  var GRADS = [
+    ["#8b5cff", "#ff3da5"], ["#2de2e6", "#8b5cff"], ["#ff3da5", "#ff9a3d"],
+    ["#22d3a0", "#2de2e6"], ["#ff6b8a", "#8b5cff"], ["#ffc93d", "#ff3da5"]
+  ];
+  function grad(name) {
+    var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    var g = GRADS[h % GRADS.length];
+    return "linear-gradient(135deg," + g[0] + "," + g[1] + ")";
+  }
+  function initials(name) {
+    var p = name.trim().split(/\s+/);
+    return ((p[0] || "?")[0] + (p[1] ? p[1][0] : "")).toUpperCase();
+  }
+  function avatar(el, name, saved) {
+    el.style.background = saved ? "linear-gradient(135deg,#2de2e6,#8b5cff)" : grad(name);
+    el.textContent = saved ? "★" : initials(name);
+  }
+  function avUser(el, u, saved) {
+    var key = (u.id || "") + ":" + (u.avatarV || "") + ":" + u.name + ":" + (saved ? 1 : 0);
+    if (el.dataset.k === key) return;
+    el.dataset.k = key;
+    if (u.avatarV && u.id && !saved) {
+      el.style.background = "none";
+      el.textContent = "";
+      var im = document.createElement("img");
+      im.className = "av-img"; im.alt = ""; im.src = "/avatar/" + u.id + "?v=" + u.avatarV;
+      el.appendChild(im);
+    } else avatar(el, u.name, saved);
+  }
+  function setAv(el, id) { avUser(el, users[id] || { name: nameOf(id) }, id === me.id); }
+  function hm(ts) { return new Date(ts).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" }); }
+  function dayKey(ts) { var d = new Date(ts); return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
+  function dayLabel(ts) {
+    var now = Date.now();
+    if (dayKey(ts) === dayKey(now)) return "Сегодня";
+    if (dayKey(ts) === dayKey(now - 86400000)) return "Вчера";
+    return new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long" });
+  }
+  function nameOf(id) { return id === me.id ? "Избранное" : (users[id] ? users[id].name : "Неизвестный"); }
+
+  /* ---------- auth ---------- */
+  function step(name) {
+    ["stPhone", "stPass", "stNew"].forEach(function (id) { $("#" + id).hidden = id !== name; });
+  }
+  function fmtPhone(d) {
+    var g = [2, 3, 2, 2], out = [], i = 0;
+    for (var k = 0; k < g.length && i < d.length; k++) { out.push(d.slice(i, i + g[k])); i += g[k]; }
+    if (i < d.length) out.push(d.slice(i));
+    return out.join(" ");
+  }
+  $("#phone").addEventListener("input", function (e) {
+    e.target.value = fmtPhone(e.target.value.replace(/\D/g, "").slice(0, 11));
+  });
+
+  if (location.protocol === "file:") {
+    $("#phoneErr").textContent = "Откройте Искру через сервер: запустите server.py и перейдите на http://localhost:3000";
+    $("#phoneBtn").disabled = true;
+  }
+
+  function showPhoneErr(t) { $("#phoneErr").textContent = t || ""; }
+
+  $("#phoneForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var d = $("#phone").value.replace(/\D/g, "");
+    if (d.length < 9) { showPhoneErr("Введите номер полностью."); return; }
+    showPhoneErr("");
+    pendingPhone = "+" + $("#cc").value + d;
+    var shown = "+" + $("#cc").value + " " + fmtPhone(d);
+    var btn = $("#phoneBtn");
+    btn.disabled = true;
+    api("POST", "/api/phone-status", { phone: pendingPhone }).then(function (j) {
+      if (j.exists) {
+        $("#passPhone").textContent = shown;
+        $("#passErr").textContent = "";
+        $("#loginPass").value = "";
+        step("stPass");
+        $("#loginPass").focus();
+      } else {
+        $("#newPhone").textContent = shown;
+        $("#nameErr").textContent = "";
+        $("#newPass").value = ""; $("#newPass2").value = "";
+        step("stNew");
+        $("#firstName").focus();
+      }
+    }).catch(function (err) {
+      showPhoneErr(errText(err));
+    }).then(function () { btn.disabled = false; });
+  });
+
+  function backToPhone() { step("stPhone"); $("#phone").focus(); }
+  $("#changePhone").addEventListener("click", backToPhone);
+  $("#changePhone2").addEventListener("click", backToPhone);
+
+  $("#passForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var p = $("#loginPass").value;
+    if (!p) { $("#passErr").textContent = "Введите пароль."; return; }
+    $("#passErr").textContent = "";
+    var btn = $("#passBtn"); btn.disabled = true;
+    api("POST", "/api/login", { phone: pendingPhone, password: p }).then(function (j) {
+      $("#loginPass").value = "";
+      login(j);
+    }).catch(function (err) {
+      $("#passErr").textContent = errText(err);
+      $("#loginPass").value = "";
+      $("#loginPass").focus();
+    }).then(function () { btn.disabled = false; });
+  });
+
+  $("#nameForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var f = $("#firstName").value.trim(), l = $("#lastName").value.trim();
+    var p1 = $("#newPass").value, p2 = $("#newPass2").value;
+    if (!f) { $("#nameErr").textContent = "Введите имя."; return; }
+    if (p1.length < 8) { $("#nameErr").textContent = "Пароль должен быть не короче 8 символов."; return; }
+    if (p1 !== p2) { $("#nameErr").textContent = "Пароли не совпадают."; return; }
+    $("#nameErr").textContent = "";
+    var btn = $("#nameBtn"); btn.disabled = true;
+    api("POST", "/api/register", { phone: pendingPhone, name: (f + " " + l).trim(), password: p1 })
+      .then(function (j) {
+        $("#newPass").value = ""; $("#newPass2").value = "";
+        if (j.token) login(j); else throw new Error("Не удалось войти");
+      })
+      .catch(function (err) {
+        if (err.status === 409) { showPhoneErr(errText(err)); backToPhone(); }
+        else $("#nameErr").textContent = errText(err);
+      })
+      .then(function () { btn.disabled = false; });
+  });
+
+  function login(j) {
+    TOKEN = j.token;
+    me = j.user;
+    accounts = accounts.filter(function (a) { return a.id !== me.id && a.token !== TOKEN; });
+    if (accounts.length >= MAX_ACCOUNTS) accounts.shift();
+    accounts.push({ token: TOKEN, id: me.id, name: me.name, phone: me.phone, avatarV: me.avatarV || "" });
+    saveAccounts();
+    addingAccount = false;
+    $("#authCancel").hidden = true;
+    startApp();
+  }
+
+  function rememberMe() {
+    var changed = false;
+    accounts.forEach(function (a) {
+      if (a.token === TOKEN && (a.id !== me.id || a.name !== me.name || a.phone !== me.phone || a.avatarV !== (me.avatarV || ""))) {
+        a.id = me.id; a.name = me.name; a.phone = me.phone; a.avatarV = me.avatarV || ""; changed = true;
+      }
+    });
+    if (changed) saveAccounts();
+  }
+  function showAuth(msg) {
+    resetData(); me = null; addingAccount = false;
+    $("#app").hidden = true; $("#app").classList.remove("open");
+    $("#phone").value = "";
+    $("#phoneErr").textContent = msg || "";
+    $("#authCancel").hidden = true;
+    step("stPhone");
+    $("#auth").hidden = false;
+    document.title = "Искра";
+  }
+  function activate(tok) {
+    clearInterval(pollTimer);
+    TOKEN = tok; saveAccounts();
+    return api("GET", "/api/me").then(function (u) {
+      me = u; $("#auth").hidden = true; startApp();
+    }).catch(function (e) {
+      if (e.status === 401 || e.status === 403) {
+        accounts = accounts.filter(function (a) { return a.token !== tok; });
+        TOKEN = null; saveAccounts();
+        if (accounts.length) return activate(accounts[0].token);
+        showAuth();
+      } else showAuth(errText(e));
+    });
+  }
+
+  /* ---------- app ---------- */
+  function resetData() {
+    users = {}; msgs = []; seen = {}; seq = 0; contacts = []; myReads = {}; peerReads = {}; typingMap = {}; blocked = [];
+    activeId = null; renderSig = "";
+  }
+  function fillMe() {
+    $("#meName").textContent = me.name;
+    $("#mePhone").textContent = me.username ? "@" + me.username : me.phone;
+    $("#admBtn").hidden = !me.isAdmin;
+    avUser($("#meAv"), me, false);
+    rememberMe();
+  }
+  function startApp() {
+    resetData();
+    $("#auth").hidden = true;
+    $("#app").hidden = false;
+    $("#app").classList.remove("open");
+    $("#chatBody").hidden = true;
+    $("#chatEmpty").hidden = false;
+    $("#meName").textContent = me.name;
+    fillMe();
+    renderList();
+    poll();
+    clearInterval(pollTimer);
+    pollTimer = setInterval(poll, 1500);
+  }
+
+  function addMessages(list) {
+    var added = false;
+    list.forEach(function (m) {
+      if (!seen[m.seq]) { seen[m.seq] = 1; msgs.push(m); added = true; }
+    });
+    if (added) msgs.sort(function (a, b) { return a.seq - b.seq; });
+  }
+
+  function poll() {
+    if (polling || !TOKEN) return;
+    polling = true;
+    var tk = TOKEN;
+    api("GET", "/api/sync?after=" + seq).then(function (d) {
+      if (tk !== TOKEN) return;
+      me = d.user;
+      blocked = d.blocks || [];
+      d.users.forEach(function (u) { users[u.id] = u; });
+      users[me.id] = me;
+      fillMe();
+      contacts = d.contacts;
+      myReads = d.myReads;
+      peerReads = d.reads;
+      typingMap = d.typing;
+      addMessages(d.messages);
+      seq = Math.max(seq, d.seq);
+      if (activeId && !document.hidden) markRead(activeId);
+      renderList();
+      if (activeId) { setHeaderStatus(); setAv($("#chAv"), activeId); applyBlockUI(); renderMsgs(false); }
+    }).catch(function (e) {
+      if (tk === TOKEN && (e.status === 401 || e.status === 403)) logout(true);
+    }).then(function () { polling = false; });
+  }
+
+  function chatsList() {
+    var map = {};
+    map[me.id] = { id: me.id, msgs: [] };
+    contacts.forEach(function (id) { if (!map[id]) map[id] = { id: id, msgs: [] }; });
+    msgs.forEach(function (m) {
+      var p = m.from === me.id ? m.to : m.from;
+      if (!map[p]) map[p] = { id: p, msgs: [] };
+      map[p].msgs.push(m);
+    });
+    return Object.keys(map).map(function (id) {
+      var c = map[id];
+      c.saved = id === me.id;
+      c.name = nameOf(id);
+      c.last = c.msgs.length ? c.msgs[c.msgs.length - 1] : null;
+      c.unread = 0;
+      if (!c.saved) {
+        var rd = myReads[id] || 0;
+        c.msgs.forEach(function (m) { if (m.from === id && m.seq > rd) c.unread++; });
+      }
+      return c;
+    });
+  }
+
+  function renderList() {
+    var q = $("#q").value.trim().toLowerCase();
+    var ul = $("#list");
+    var all = chatsList();
+    var total = 0;
+    all.forEach(function (c) { total += c.unread; });
+    document.title = (total ? "(" + total + ") " : "") + "Искра";
+
+    var chats = all.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) !== -1; })
+      .sort(function (a, b) {
+        var ta = a.last ? a.last.ts : (a.saved ? 0 : Date.now());
+        var tb = b.last ? b.last.ts : (b.saved ? 0 : Date.now());
+        return tb - ta;
+      });
+    ul.innerHTML = "";
+    chats.forEach(function (c) {
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "item" + (c.id === activeId ? " active" : "");
+      var av = document.createElement("div"); av.className = "av"; setAv(av, c.id);
+      var mid = document.createElement("div"); mid.className = "mid";
+      var n = document.createElement("b"); n.textContent = c.name;
+      var s = document.createElement("span");
+      s.textContent = c.last ? (c.last.from === me.id ? "Вы: " : "") + c.last.text : (c.saved ? "Заметки для себя" : "Нет сообщений");
+      mid.appendChild(n); mid.appendChild(s);
+      var end = document.createElement("div"); end.className = "end";
+      var t = document.createElement("span"); t.textContent = c.last ? hm(c.last.ts) : "";
+      end.appendChild(t);
+      if (c.unread) { var bd = document.createElement("span"); bd.className = "badge"; bd.textContent = c.unread; end.appendChild(bd); }
+      b.appendChild(av); b.appendChild(mid); b.appendChild(end);
+      b.addEventListener("click", function () { openChat(c.id); });
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    if (!q && all.length === 1) {
+      var hint = document.createElement("li");
+      hint.className = "empty-list";
+      hint.textContent = "Пока только «Избранное». Нажмите +, чтобы добавить собеседника по номеру телефона.";
+      ul.appendChild(hint);
+    } else if (q && !chats.length) {
+      var none = document.createElement("li");
+      none.className = "empty-list";
+      none.textContent = "Ничего не найдено.";
+      ul.appendChild(none);
+    }
+  }
+  $("#q").addEventListener("input", renderList);
+
+  function markRead(id) {
+    if (!me || id === me.id) return;
+    var top = 0;
+    msgs.forEach(function (m) { if (m.from === id && m.seq > top) top = m.seq; });
+    if (top > (myReads[id] || 0)) {
+      myReads[id] = top;
+      api("POST", "/api/read", { peer: id, upto: top }).catch(function () {});
+    }
+  }
+
+  function setHeaderStatus() {
+    var el = $("#chStatus");
+    if (activeId === me.id) { el.className = ""; el.textContent = "Личные заметки"; return; }
+    if (typingMap[activeId]) { el.className = "typing"; el.textContent = "печатает…"; return; }
+    el.className = "";
+    var pu = users[activeId];
+    el.textContent = pu ? (pu.username ? "@" + pu.username + " · " : "") + pu.phone : "";
+  }
+
+  function isBlocked(id) { return blocked.indexOf(id) !== -1; }
+  function applyBlockUI() {
+    var on = !!activeId && activeId !== me.id;
+    var b = on && isBlocked(activeId);
+    $("#blockBtn").hidden = !on || b;
+    $("#blockBar").hidden = !b;
+    $("#composer").hidden = b;
+  }
+  $("#blockBtn").addEventListener("click", function () {
+    var id = activeId;
+    if (!id || !confirm("Заблокировать " + nameOf(id) + "? Человек больше не сможет вам писать. Разблокировать можно в любой момент.")) return;
+    api("POST", "/api/block", { id: id, blocked: true }).then(function () {
+      if (!isBlocked(id)) blocked.push(id);
+      applyBlockUI();
+    }).catch(function (err) { $("#sendErr").textContent = errText(err); });
+  });
+  $("#unblockBtn").addEventListener("click", function () {
+    var id = activeId;
+    if (!id) return;
+    api("POST", "/api/block", { id: id, blocked: false }).then(function () {
+      blocked = blocked.filter(function (x) { return x !== id; });
+      applyBlockUI();
+    }).catch(function (err) { $("#sendErr").textContent = errText(err); });
+  });
+
+  function openChat(id) {
+    activeId = id;
+    renderSig = "";
+    $("#app").classList.add("open");
+    $("#chatEmpty").hidden = true;
+    $("#chatBody").hidden = false;
+    $("#sendErr").textContent = "";
+    setAv($("#chAv"), id);
+    $("#chName").textContent = nameOf(id);
+    setHeaderStatus();
+    applyBlockUI();
+    markRead(id);
+    renderMsgs(true);
+    renderList();
+    if (window.matchMedia("(min-width: 761px)").matches) $("#text").focus();
+  }
+
+  function chatMsgs() {
+    return msgs.filter(function (m) { return (m.from === activeId && m.to === me.id) || (m.to === activeId && m.from === me.id); });
+  }
+  function isRead(m) {
+    if (activeId === me.id) return true;
+    return (peerReads[m.to] || 0) >= m.seq;
+  }
+
+  function renderMsgs(force) {
+    var list = chatMsgs();
+    var box = $("#msgs");
+    var sig = activeId + "|" + list.length + "|" + (list.length ? list[list.length - 1].seq : 0) + "|" + (peerReads[activeId] || 0);
+    if (!force && sig === renderSig) return;
+    renderSig = sig;
+    var near = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    box.innerHTML = "";
+    var prevDay = "";
+    list.forEach(function (m) {
+      var k = dayKey(m.ts);
+      if (k !== prevDay) {
+        prevDay = k;
+        var day = document.createElement("div");
+        day.className = "day"; day.textContent = dayLabel(m.ts);
+        box.appendChild(day);
+      }
+      box.appendChild(bubble(m));
+    });
+    if (force || near) box.scrollTop = box.scrollHeight;
+  }
+
+  function bubble(m) {
+    var out = m.from === me.id;
+    var d = document.createElement("div");
+    d.className = "bub " + (out ? "out" : "in");
+    d.appendChild(document.createTextNode(m.text));
+    var meta = document.createElement("span");
+    meta.className = "meta";
+    meta.appendChild(document.createTextNode(hm(m.ts) + (out ? " " : "")));
+    if (out) {
+      var tick = document.createElement("span");
+      var rd = isRead(m);
+      tick.className = rd ? "read" : "";
+      tick.textContent = rd ? "✓✓" : "✓";
+      meta.appendChild(tick);
+    }
+    d.appendChild(meta);
+    return d;
+  }
+
+  $("#text").addEventListener("input", function () {
+    $("#sendBtn").disabled = !$("#text").value.trim();
+    var now = Date.now();
+    if (activeId && activeId !== me.id && now - lastTypingSent > 2000) {
+      lastTypingSent = now;
+      api("POST", "/api/typing", { to: activeId }).catch(function () {});
+    }
+  });
+  $("#composer").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = $("#text").value.trim();
+    if (!t || !activeId) return;
+    var to = activeId;
+    $("#sendBtn").disabled = true;
+    api("POST", "/api/send", { to: to, text: t }).then(function (j) {
+      $("#sendErr").textContent = "";
+      $("#text").value = "";
+      addMessages([j.message]);
+      renderList();
+      if (activeId === to) renderMsgs(true);
+    }).catch(function (err) {
+      $("#sendErr").textContent = errText(err);
+      $("#sendBtn").disabled = !$("#text").value.trim();
+    });
+  });
+
+  $("#backBtn").addEventListener("click", function () {
+    $("#app").classList.remove("open");
+    activeId = null;
+    renderList();
+  });
+
+  $("#newBtn").addEventListener("click", function () {
+    var f = $("#newForm");
+    f.hidden = !f.hidden;
+    if (!f.hidden) $("#nPhone").focus();
+  });
+  $("#newForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var query = $("#nPhone").value.trim();
+    if (query.replace("@", "").length < 3) { $("#nErr").textContent = "Введите @имя пользователя целиком."; return; }
+    $("#nErr").textContent = "";
+    var btn = $("#nBtn"); btn.disabled = true;
+    api("POST", "/api/contacts", { query: query }).then(function (j) {
+      users[j.user.id] = j.user;
+      if (contacts.indexOf(j.user.id) === -1) contacts.push(j.user.id);
+      $("#nPhone").value = "";
+      $("#newForm").hidden = true;
+      renderList();
+      openChat(j.user.id);
+    }).catch(function (err) {
+      $("#nErr").textContent = errText(err);
+    }).then(function () { btn.disabled = false; });
+  });
+
+  function logout(expired) {
+    clearInterval(pollTimer);
+    var tok = TOKEN;
+    var done = function () {
+      admClose(); profClose();
+      accounts = accounts.filter(function (a) { return a.token !== tok; });
+      TOKEN = null; me = null; saveAccounts();
+      if (accounts.length) activate(accounts[0].token);
+      else showAuth(expired === true ? "Сессия закончилась. Войдите снова." : "");
+    };
+    if (expired === true || !TOKEN) done();
+    else api("POST", "/api/logout", {}).catch(function () {}).then(done);
+  }
+  $("#logoutBtn").addEventListener("click", function () { logout(false); });
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && me) poll();
+  });
+
+  /* ---------- profile ---------- */
+  function profSay(t, bad) { var el = $("#pMsg"); el.textContent = t || ""; el.className = "adm-msg" + (bad ? " bad" : ""); }
+  function profOpen() {
+    $("#pName").value = me.name;
+    $("#pUser").value = me.username || "";
+    $("#pPhone").textContent = me.phone;
+    avUser($("#pAv"), me, false);
+    profSay("");
+    renderAccounts();
+    $("#profile").hidden = false;
+    $("#pName").focus();
+  }
+  function renderAccounts() {
+    $("#accTitle").textContent = "Аккаунты: " + accounts.length + " из " + MAX_ACCOUNTS;
+    var ul = $("#accList"); ul.innerHTML = "";
+    accounts.forEach(function (a) {
+      var cur = a.token === TOKEN;
+      var li = document.createElement("li"); li.className = "acc" + (cur ? " cur" : "");
+      var pick = document.createElement("button"); pick.type = "button"; pick.className = "pick";
+      var av = document.createElement("div"); av.className = "av sm";
+      avUser(av, { id: a.id, name: a.name || "?", avatarV: a.avatarV }, false);
+      var mid = document.createElement("div"); mid.className = "mid";
+      var n = document.createElement("b"); n.textContent = a.name || a.phone || "Аккаунт";
+      var p = document.createElement("span"); p.textContent = a.phone || "";
+      mid.appendChild(n); mid.appendChild(p);
+      pick.appendChild(av); pick.appendChild(mid);
+      li.appendChild(pick);
+      if (cur) {
+        var t = document.createElement("span"); t.className = "tag"; t.textContent = "текущий"; li.appendChild(t);
+      } else {
+        pick.addEventListener("click", function () { profClose(); activate(a.token); });
+        var x = document.createElement("button"); x.type = "button"; x.className = "icon-btn";
+        x.title = "Убрать аккаунт с этого устройства"; x.setAttribute("aria-label", "Убрать аккаунт");
+        x.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+        x.addEventListener("click", function () {
+          if (!confirm("Выйти из аккаунта " + (a.name || a.phone) + " на этом устройстве?")) return;
+          fetch("/api/logout", { method: "POST", headers: { Authorization: "Bearer " + a.token, "Content-Type": "application/json" }, body: "{}" }).catch(function () {});
+          accounts = accounts.filter(function (z) { return z.token !== a.token; });
+          saveAccounts(); renderAccounts();
+        });
+        li.appendChild(x);
+      }
+      ul.appendChild(li);
+    });
+    var full = accounts.length >= MAX_ACCOUNTS;
+    $("#accAdd").disabled = full;
+    $("#accAdd").textContent = full ? "Достигнут лимит: " + MAX_ACCOUNTS + " аккаунта" : "Добавить аккаунт";
+  }
+  $("#accAdd").addEventListener("click", function () {
+    if (accounts.length >= MAX_ACCOUNTS) return;
+    profClose();
+    addingAccount = true;
+    $("#app").hidden = true;
+    $("#phone").value = ""; $("#phoneErr").textContent = "";
+    step("stPhone");
+    $("#auth").hidden = false;
+    $("#authCancel").hidden = false;
+  });
+  $("#authCancel").addEventListener("click", function () {
+    if (!addingAccount) return;
+    addingAccount = false;
+    $("#auth").hidden = true; $("#app").hidden = false;
+    $("#authCancel").hidden = true;
+  });
+
+  /* фото профиля: обрезаем до квадрата 192×192 и сжимаем в JPEG прямо в браузере */
+  function saveAvatar(dataUrl) {
+    return api("POST", "/api/profile", { avatar: dataUrl }).then(function (j) {
+      me = j.user; users[me.id] = me;
+      fillMe(); renderList(); avUser($("#pAv"), me, false); renderAccounts();
+      profSay(dataUrl ? "Фото обновлено." : "Фото убрано.");
+    }).catch(function (err) { profSay(errText(err), true); });
+  }
+  $("#pPick").addEventListener("click", function () { $("#pFile").click(); });
+  $("#pDrop").addEventListener("click", function () { saveAvatar(""); });
+  $("#pFile").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    this.value = "";
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { profSay("Выберите файл-картинку.", true); return; }
+    var img = new Image(), url = URL.createObjectURL(f);
+    img.onload = function () {
+      var S = 192, c = document.createElement("canvas"); c.width = c.height = S;
+      var side = Math.min(img.width, img.height);
+      c.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, S, S);
+      URL.revokeObjectURL(url);
+      var q = 0.85, data = c.toDataURL("image/jpeg", q);
+      while (data.length > 36000 && q > 0.4) { q -= 0.1; data = c.toDataURL("image/jpeg", q); }
+      saveAvatar(data);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); profSay("Не удалось открыть картинку.", true); };
+    img.src = url;
+  });
+
+  function profClose() { $("#profile").hidden = true; }
+  $("#profBtn").addEventListener("click", profOpen);
+  $("#pClose").addEventListener("click", profClose);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("#profile").hidden) profClose(); });
+  $("#profForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = $("#pBtn"); btn.disabled = true;
+    api("POST", "/api/profile", { name: $("#pName").value, username: $("#pUser").value }).then(function (j) {
+      me = j.user; users[me.id] = me;
+      fillMe(); renderList();
+      $("#pName").value = me.name; $("#pUser").value = me.username || "";
+      avUser($("#pAv"), me, false);
+      profSay("Сохранено.");
+    }).catch(function (err) { profSay(errText(err), true); })
+      .then(function () { btn.disabled = false; });
+  });
+
+  /* ---------- admin ---------- */
+  var admTimer = null, admData = null;
+
+  function admSay(text, bad) {
+    var el = $("#admMsg");
+    el.textContent = text || "";
+    el.className = "adm-msg" + (bad ? " bad" : "");
+  }
+  function admOpen() {
+    $("#admin").hidden = false;
+    admSay("");
+    admLoad();
+    clearInterval(admTimer);
+    admTimer = setInterval(admLoad, 5000);
+  }
+  function admClose() {
+    $("#admin").hidden = true;
+    clearInterval(admTimer);
+  }
+  function admLoad() {
+    return api("GET", "/api/admin/overview").then(function (d) {
+      admData = d;
+      admRender();
+    }).catch(function (e) {
+      admSay(errText(e), true);
+      if (e.status === 404 || e.status === 401 || e.status === 403) admClose();
+    });
+  }
+  function admAct(path, body, done) {
+    return api("POST", path, body).then(function (j) {
+      admSay(done ? done(j) : "Готово.");
+      return admLoad();
+    }).catch(function (e) { admSay(errText(e), true); });
+  }
+  function uptime(sec) {
+    if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + " мин";
+    if (sec < 86400) return Math.floor(sec / 3600) + " ч " + Math.round(sec % 3600 / 60) + " мин";
+    return Math.floor(sec / 86400) + " д " + Math.floor(sec % 86400 / 3600) + " ч";
+  }
+
+  function admRender() {
+    var d = admData;
+    if (!d) return;
+    var st = $("#admStats");
+    st.innerHTML = "";
+    [["Пользователи", d.users.length], ["Сейчас онлайн", d.online], ["Сообщения", d.messages], ["Заблокированы", d.banned]].forEach(function (x) {
+      var c = document.createElement("div"); c.className = "stat";
+      var b = document.createElement("b"); b.textContent = x[1];
+      var s = document.createElement("span"); s.textContent = x[0];
+      c.appendChild(b); c.appendChild(s); st.appendChild(c);
+    });
+    $("#admInfo").textContent = "SMS: " + (d.devSms ? "тестовый режим, коды не уходят по SMS" : "Twilio") +
+      ". Активных входов: " + d.sessions + ". Сервер работает " + uptime(d.uptimeSec) + ".";
+
+    var q = $("#admQ").value.trim().toLowerCase();
+    var ul = $("#admList");
+    ul.innerHTML = "";
+    var rows = d.users.filter(function (u) {
+      return !q || u.name.toLowerCase().indexOf(q) !== -1 || (u.username || "").indexOf(q.replace(/^@/, "")) !== -1 || u.phone.indexOf(q.replace(/[^\d+]/g, "")) !== -1 && /\d/.test(q);
+    });
+    if (!rows.length) {
+      var none = document.createElement("li"); none.className = "empty-list";
+      none.textContent = "Никого не найдено.";
+      ul.appendChild(none);
+    }
+    rows.forEach(function (u) {
+      var li = document.createElement("li");
+      li.className = "adm-user" + (u.banned ? " banned" : "");
+      var top = document.createElement("div"); top.className = "adm-top";
+      var av = document.createElement("div"); av.className = "av sm"; avUser(av, u, false);
+      var mid = document.createElement("div"); mid.className = "mid";
+      var n = document.createElement("b");
+      n.textContent = u.name + (u.isAdmin ? " (вы)" : "") + (u.banned ? " · заблокирован" : "");
+      var sub = document.createElement("span");
+      sub.textContent = u.phone + (u.username ? " · @" + u.username : "") + " · отправил: " + u.sent + " · с " + new Date(u.createdAt * 1000).toLocaleDateString("ru-RU");
+      mid.appendChild(n); mid.appendChild(sub);
+      var dot = document.createElement("div"); dot.className = "dot" + (u.online ? " on" : "");
+      dot.title = u.online ? "Онлайн" : "Не в сети";
+      top.appendChild(av); top.appendChild(mid); top.appendChild(dot);
+      li.appendChild(top);
+      if (!u.isAdmin) {
+        var acts = document.createElement("div"); acts.className = "adm-acts";
+        var add = function (label, cls, fn) {
+          var b = document.createElement("button"); b.type = "button"; b.textContent = label;
+          if (cls) b.className = cls;
+          b.addEventListener("click", fn); acts.appendChild(b);
+        };
+        add("Переименовать", "", function () {
+          var nn = prompt("Новое имя для " + u.phone, u.name);
+          if (nn && nn.trim()) admAct("/api/admin/rename", { id: u.id, name: nn.trim() });
+        });
+        if (u.sessions) add("Выйти со всех устройств", "", function () {
+          admAct("/api/admin/kick", { id: u.id }, function () { return "Сеансы завершены."; });
+        });
+        add(u.banned ? "Разблокировать" : "Заблокировать", u.banned ? "" : "danger", function () {
+          if (!u.banned && !confirm("Заблокировать " + u.name + "? Пользователь будет разлогинен и не сможет войти.")) return;
+          admAct("/api/admin/ban", { id: u.id, banned: !u.banned });
+        });
+        add("Удалить", "danger", function () {
+          if (!confirm("Удалить " + u.name + " вместе со всей перепиской? Это нельзя отменить.")) return;
+          admAct("/api/admin/delete", { id: u.id }, function () { return "Пользователь удалён."; });
+        });
+        li.appendChild(acts);
+      }
+      ul.appendChild(li);
+    });
+  }
+
+  $("#admBtn").addEventListener("click", admOpen);
+  $("#admClose").addEventListener("click", admClose);
+  $("#admRefresh").addEventListener("click", function () { admLoad(); });
+  $("#admQ").addEventListener("input", admRender);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("#admin").hidden) admClose(); });
+  $("#admBc").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = $("#admText").value.trim();
+    if (!t || !admData) return;
+    var n = admData.users.filter(function (u) { return !u.isAdmin && !u.banned; }).length;
+    if (!n) { admSay("Некому отправлять: других пользователей нет.", true); return; }
+    if (!confirm("Отправить сообщение " + n + " пользователям?")) return;
+    admAct("/api/admin/broadcast", { text: t }, function (j) {
+      $("#admText").value = "";
+      return "Отправлено: " + j.sent + ".";
+    });
+  });
+
+  /* ---------- boot ---------- */
+  if (TOKEN) { $("#auth").hidden = true; activate(TOKEN); }
+})();
+</script>
+</body>
+</html>
